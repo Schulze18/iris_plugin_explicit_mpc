@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<sdf version="1.5">
+
+    <model name="my_iris">
+        <include>
+	    <!--Include model from local folder-->
+            <uri>model://iris_with_standoffs</uri>
+        </include>
+	    <pose>0 0 0 0 0 0</pose>
+        
+        <!-- Attach the plugin to this model -->
+        <!--<plugin name="iris_explicit_control" filename="/home/schulze-ubuntu/iris_plugin_explicit_mpc/build/libiris_plugin_explicit_mpc.so"/> -->
+        <plugin name="iris_explicit_control" filename="libiris_plugin_explicit_mpc.so"/> 
+                                                 
+    </model>
+
+</sdf>

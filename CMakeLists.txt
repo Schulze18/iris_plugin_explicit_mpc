@@ -1,22 +1,57 @@
-cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8.3)
+project(iris_plugin_explicit_mpc)
 
-find_package(roscpp REQUIRED)
-find_package(std_msgs REQUIRED)
-include_directories(${roscpp_INCLUDE_DIRS})
-include_directories(${std_msgs_INCLUDE_DIRS})
-
+# Load catkin and all dependencies required for this package
+find_package(catkin REQUIRED COMPONENTS
+  geometry_msgs
+  roscpp
+  rospy
+  std_msgs
+  xacro
+  gazebo
+)
 find_package(gazebo REQUIRED)
-include_directories(${GAZEBO_INCLUDE_DIRS})
-link_directories(${GAZEBO_LIBRARY_DIRS})
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
+catkin_package(
+    DEPENDS
+        geometry_msgs
+        roscpp
+        rospy
+        std_msgs
+        xacro
+        gazebo
+)
+
+include_directories(
+    include)
+include_directories(
+    SYSTEM
+    ${catkin_INCLUDE_DIRS}
+    ${GAZEBO_INCLUDE_DIRS}
+    ${roscpp_INCLUDE_DIRS}
+    ${std_msgs_INCLUDE_DIRS}
+)
+link_directories(${GAZEBO_LIBRARY_DIRS})
+
+add_library(
+    iris_plugin_explicit_mpc SHARED
+    src/iris_plugin_explicit_mpc.cc
+    )
 
 
-# Include header directory
-# ----------------------------------------------
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(iris_plugin_explicit_mpc ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+add_dependencies(iris_plugin_explicit_mpc ${catkin_EXPORTED_TARGETS})
 
+install(
+    TARGETS
+        iris_plugin_explicit_mpc
+    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+)
 
-# Build our plugin
-add_library(iris_plugin_explicit_mpc SHARED iris_plugin_explicit_mpc.cc)
-target_link_libraries(iris_plugin_explicit_mpc ${GAZEBO_libraries} ${roscpp_LIBRARIES})
+foreach(dir include)
+    install(DIRECTORY ${dir}/
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/${dir})
+endforeach(dir)
