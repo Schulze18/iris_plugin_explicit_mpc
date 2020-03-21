@@ -15,9 +15,11 @@
 #include <time.h>
 #include <sys/time.h>
 #include "ros/ros.h"
+#include "ros/package.h"
 #include "ros/callback_queue.h"
 #include "ros/subscribe_options.h"
 #include <ignition/math/Pose3.hh>
+#include <gazebo/common/SystemPaths.hh>
 // Include Msgs Types
 #include <sensor_msgs/Imu.h> 
 #include <geometry_msgs/Quaternion.h>
@@ -49,7 +51,7 @@ namespace gazebo
     {
 
    	// Just output a message for now
-    	std::cerr << "\nThe iris plugin is attach to model" << _model->GetName() << "\n";
+    std::cerr << "\nThe iris plugin is attach to model" << _model->GetName() << "\n";
 
 	//Load Regions and BST file
 	get_bst_from_file(&(this->bst_nodes), this->filename_bst);
@@ -103,20 +105,94 @@ namespace gazebo
     this->update_connection_ =
 	   event::Events::ConnectWorldUpdateBegin ( boost::bind ( &IrisPluginExplicitMPC::UpdateVelocity, this ) );
 
+	/*
+	//TOPIC
+  	if (_sdf->HasElement("topicState"))
+  	{
+		//std::cerr << std::string(this->model->GetFilename()) << "\n";
+		std::cout << _sdf->Get<std::string>("topicState") << "\n";
+		std::cout << _sdf->Get<std::string>("topicCommand") << "\n";
+		std::cout << _sdf->Get<std::string>("topicReference") << "\n";
+		std::cout << _sdf->Get<std::string>("filenameBST") << "\n";
+		std::cout << _sdf->Get<std::string>("filenameRegions") << "\n";
+		std::cout << _sdf->Get<std::string>("filenameIneq") << "\n";
+		std::cout << _sdf->Get<std::string>("filenameControlParam") << "\n";
+
+		this->rosNode->getParam("/explicit_plugin_path", this->plugin_pkg_path);
+		std::cout << this->plugin_pkg_path << "\n\n";
+
+	}*/
+
+
+	if (this->rosNode->hasParam("/explicit_plugin_path")){
+		this->rosNode->getParam("/explicit_plugin_path", this->plugin_pkg_path);
+	}
+	else{
+		ROS_INFO("No param named 'explicit_plugin_path'");
+	}
+	std::string temp_file_BST;
+	std::string temp_file_regions;
+	std::string temp_file_ineq;
+	std::string temp_file_param;
+
+	if (_sdf->HasElement("topicState")) std::string temp_topic_state = _sdf->Get<std::string>("topicState");
+  	else std::string temp_topic_state = "iris_state";
+
+	if (_sdf->HasElement("topicCommand")) std::string temp_topic_command = _sdf->Get<std::string>("topicCommand");
+  	else std::string temp_topic_state = "vel_cmd";
+
+	if (_sdf->HasElement("topicReference")) std::string temp_topic_reference = _sdf->Get<std::string>("topicReference");
+  	else std::string temp_topic_state = "iris_ref";
+
+	if (_sdf->HasElement("filenameBST")) temp_file_BST = _sdf->Get<std::string>("filenameBST");
+  	else temp_file_BST = "/control_files/vt1_20_2_u3_linux/output_bst_20_2_u3_vt1.txt";
+
+	if (_sdf->HasElement("filenameRegions")) temp_file_regions = _sdf->Get<std::string>("filenameRegions");
+  	else temp_file_regions = "/control_files/vt1_20_2_u3_linux/output_regions_20_2_u3_vt1.txt";
+
+	if (_sdf->HasElement("filenameIneq")) temp_file_ineq = _sdf->Get<std::string>("filenameIneq");
+  	else  temp_file_ineq = "/control_files/vt1_20_2_u3_linux/output_ineq_20_2_u3_vt1.txt";
+
+	if (_sdf->HasElement("filenameControlParam")) temp_file_param = _sdf->Get<std::string>("filenameControlParam");
+  	else temp_file_param = "/control_files/vt1_20_2_u3_linux/output_control_param_20_2_u3_vt1.txt";
+
+	std::string string_temp1;
+	std::string string_temp2;
+	std::string string_temp3;
+	std::string string_temp4;
+	/*string_temp = this->plugin_pkg_path + _sdf->Get<std::string>("filenameBST");
+	//std::cout << "string temp:"  <<"\n" << string_temp << "\n";
+	
+	this->filename_control_test = string_temp.c_str();
+	
+	std::cout << "const char temp:"  << "\n" << this->filename_control_test << "\n";
+	*/
+	//string_temp1 = this->plugin_pkg_path + _sdf->Get<std::string>("filenameBST");
+	string_temp1 = this->plugin_pkg_path + temp_file_BST;
+	this->filename_bst = string_temp1.c_str();
+
+	//string_temp2 = this->plugin_pkg_path + _sdf->Get<std::string>("filenameRegions");
+	string_temp2 = this->plugin_pkg_path + temp_file_regions;
+	this->filename_regions = string_temp2.c_str();
+
+	//string_temp3 = this->plugin_pkg_path + _sdf->Get<std::string>("filenameIneq");
+	string_temp3 = this->plugin_pkg_path + temp_file_ineq;
+	this->filename_ineq_set = string_temp3.c_str();
+
+	//string_temp4 = this->plugin_pkg_path + _sdf->Get<std::string>("filenameControlParam");
+	string_temp4 = this->plugin_pkg_path + temp_file_param;
+	this->filename_control_param = string_temp4.c_str();
+
+	std::cout << "TEST Files\n";
+	std::cout << this->filename_bst << "\n";
+	std::cout << this->filename_regions << "\n";
+	std::cout << this->filename_ineq_set << "\n";
+	std::cout << this->filename_control_param << "\n";
 
 
 	//Debug prints
 	//this->model->GetLinks()
-	/*std::cout << this->model->GetLink("rotor_0") << "\n";
-	std::cout << this->model->GetChild(0)->GetName() << "\n";
-	std::cout << this->model->GetLinks()[0]->GetName() << "\n";
-	std::cout << this->model->GetLinks()[1]->GetName() << "\n";
-	std::cout << this->model->GetLinks()[2]->GetName() << "\n";
-	std::cout << this->model->GetLinks()[3]->GetName() << "\n";
-	std::cout << this->model->GetLinks()[4]->GetName() << "\n";
-	std::cout << this->model->GetLinks()[5]->GetName() << "\n";
-	std::cout << this->model->GetLinks()[6]->GetName() << "\n";*/
-	std::cout << _sdf->GetElement("robotNamespace")->Get<std::string>() << "\n";
+	//std::cout << this->model->GetLink("rotor_0") << "\n";
 
 	}
 
@@ -333,13 +409,13 @@ namespace gazebo
 	this->old_iris_state_vel[4] = this->old_iris_state_vel[4];
 	this->old_iris_state_vel[5] = this->old_iris_state_vel[5];
 
-	
+	/*
 	//ros::Time time2 = ros::Time::now();
 	std::cout << (this->get_wall_time() - time_ini) << "\n";
 	//this->delta_cpu_time = this->get_cpu_time() - time_cpu_ini;
 	std::cout << (this->get_cpu_time() - time_cpu_ini) << "\n";
 	std::cout << (this->delta_cpu_time) << "\n\n";
-
+*/
 	}
 
 	public: void pub_data(){
@@ -536,6 +612,9 @@ namespace gazebo
 	// Pointer to the model.
 	private: physics::ModelPtr model;
 
+	// Model Name
+	private: std::string model_name;
+
 	// Pointer to the joint.
 	private: physics::JointPtr joint;
 
@@ -545,11 +624,20 @@ namespace gazebo
 	// A ROS subscriber
 	private: ros::Subscriber rosSub;
 
-	// Publisher of Iris States
-	private: ros::Publisher state_pub; 
+	// Reference Subscriber Name
+	private: std::string ref_sub_name;
 
-	//Publisher of Iris Volicities
+	// Publisher of Iris States
+	private: ros::Publisher state_pub;
+
+	// State Publisher Name
+	private: std::string state_pub_name;
+
+	// Publisher of Iris Volicities
 	private: ros::Publisher vel_pub;
+
+	// Vel Cmd Publisher Name
+	private: std::string vel_pub_name;
 
 	// A ROS callbackqueue that helps process messages
 	private: ros::CallbackQueue rosQueue;
@@ -604,21 +692,23 @@ namespace gazebo
 	//Explicit MPC data
 	private: std::vector<struct_bst> bst_nodes;
 
-	private: const char *filename_bst = "/home/schulze-ubuntu/iris_plugin_explicit_mpc/control_files/vt1_20_2_u3_linux/output_bst_20_2_u3_vt1.txt";
+	private: const char *filename_bst;// = "/home/schulze-ubuntu/iris_plugin_explicit_mpc/control_files/vt1_20_2_u3_linux/output_bst_20_2_u3_vt1.txt";
 
 	private: std::vector<struct_regions> regions;
 
-	private: const char *filename_regions = "/home/schulze-ubuntu/iris_plugin_explicit_mpc/control_files/vt1_20_2_u3_linux/output_regions_20_2_u3_vt1.txt";
+	private: const char *filename_regions;// = "/home/schulze-ubuntu/iris_plugin_explicit_mpc/control_files/vt1_20_2_u3_linux/output_regions_20_2_u3_vt1.txt";
 
 	private: std::vector<struct_ineq_set> ineq_set;
 
-	private: const char *filename_ineq_set = "/home/schulze-ubuntu/iris_plugin_explicit_mpc/control_files/vt1_20_2_u3_linux/output_ineq_20_2_u3_vt1.txt";
+	private: const char *filename_ineq_set;// = "/home/schulze-ubuntu/iris_plugin_explicit_mpc/control_files/vt1_20_2_u3_linux/output_ineq_20_2_u3_vt1.txt";
 		
 	private: struct_control_param control_param;
 
-	private: const char *filename_control_param = "/home/schulze-ubuntu/iris_plugin_explicit_mpc/control_files/vt1_20_2_u3_linux/output_control_param_20_2_u3_vt1.txt";
+	private: const char *filename_control_param;// = "/home/schulze-ubuntu/iris_plugin_explicit_mpc/control_files/vt1_20_2_u3_linux/output_control_param_20_2_u3_vt1.txt";
 		
 	private: int index_region = 0;
+
+	private: const char *filename_control_test;
 
     // A flag to initialize the controller only after the first reference command
 	private: int flag_inicio = 0;
@@ -631,6 +721,8 @@ namespace gazebo
 
 	// Pointer to the update event connection
  	private: event::ConnectionPtr update_connection_;
+
+	private: std::string plugin_pkg_path;
 
 	};
 

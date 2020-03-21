@@ -3,15 +3,24 @@
 
     <model name="my_iris">
         <include>
-	    <!--Include model from local folder-->
-            <uri>model://iris_with_standoffs</uri>
+	        <!--Include model from local folder-->
+            <uri>file://robots/iris_with_standoffs</uri>
         </include>
 	    <pose>0 0 0 0 0 0</pose>
         
         <!-- Attach the plugin to this model -->
-        <!--<plugin name="iris_explicit_control" filename="/home/schulze-ubuntu/iris_plugin_explicit_mpc/build/libiris_plugin_explicit_mpc.so"/> -->
-        <plugin name="iris_explicit_control" filename="libiris_plugin_explicit_mpc.so"/> 
-                                                 
+        <plugin name="iris_explicit_control" filename="libiris_plugin_explicit_mpc.so"> 
+            <!-- Plugin Topics -->
+            <topicState>iris_state</topicState>
+            <topicCommand>vel_cmd</topicCommand>
+            <topicReference>iris_ref</topicReference>
+
+            <!-- Explicit Controller Files -->
+            <filenameBST>/control_files/vt1_20_2_u3_linux/output_bst_20_2_u3_vt1.txt</filenameBST>
+            <filenameRegions>/control_files/vt1_20_2_u3_linux/output_regions_20_2_u3_vt1.txt</filenameRegions>
+            <filenameIneq>/control_files/vt1_20_2_u3_linux/output_ineq_20_2_u3_vt1.txt </filenameIneq>
+            <filenameControlParam>/control_files/vt1_20_2_u3_linux/output_control_param_20_2_u3_vt1.txt</filenameControlParam>
+        </plugin>                            
     </model>
 
 </sdf>

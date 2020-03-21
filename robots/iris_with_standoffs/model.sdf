@@ -152,7 +152,7 @@
         </ode>
       </physics>
     </joint>
-    <link name='iris/imu_link2'>
+    <link name='iris/imu_link'>
       <inertial>
         <pose>0 0 0 0 0 0</pose>
         <mass>0.0015</mass>
@@ -172,7 +172,7 @@
       </sensor>
     </link>
     <joint name='iris/imu_joint' type='revolute'>
-      <child>iris/imu_link2</child>
+      <child>iris/imu_link</child>
       <parent>base_link</parent>
       <axis>
         <xyz>0 0 1</xyz>
