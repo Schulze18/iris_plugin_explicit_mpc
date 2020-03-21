@@ -16,10 +16,10 @@
             <topicReference>iris_reference</topicReference>
 
             <!-- Explicit Controller Files -->
-            <filenameBST>/control_files/vt1_20_2_u3_linux/output_bst_20_2_u3_vt1.txt</filenameBST>
-            <filenameRegions>/control_files/vt1_20_2_u3_linux/output_regions_20_2_u3_vt1.txt</filenameRegions>
-            <filenameIneq>/control_files/vt1_20_2_u3_linux/output_ineq_20_2_u3_vt1.txt </filenameIneq>
-            <filenameControlParam>/control_files/vt1_20_2_u3_linux/output_control_param_20_2_u3_vt1.txt</filenameControlParam>
+            <filenameBST>/control_files/vt1_10_2_u3_linux/output_bst_10_2_u3_vt1.txt</filenameBST>
+            <filenameRegions>/control_files/vt1_10_2_u3_linux/output_regions_10_2_u3_vt1.txt</filenameRegions>
+            <filenameIneq>/control_files/vt1_10_2_u3_linux/output_ineq_10_2_u3_vt1.txt </filenameIneq>
+            <filenameControlParam>/control_files/vt1_10_2_u3_linux/output_control_param_10_2_u3_vt1.txt</filenameControlParam>
         </plugin>                            
     </model>
 

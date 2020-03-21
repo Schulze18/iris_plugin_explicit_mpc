@@ -368,7 +368,7 @@ namespace gazebo
 			this->iris_state_ref[5] = -0.3;
 		}*/
 
-		/*
+		
 		if (this->tic_simu == 1000) this->iris_state_ref[3] = 0.2;
 		else if (this->tic_simu == 1500) this->iris_state_ref[4] = 0.3;
 		else if (this->tic_simu == 2000) this->iris_state_ref[5] = -0.2;
@@ -392,13 +392,13 @@ namespace gazebo
 		/*else if (this->tic_simu == 4500){
 			this->iris_state_ref[3] = -0.2;
 			this->iris_state_ref[]
-		}*//*
+		}*/
 		else if (this->tic_simu == 4500){
 			this->iris_state_ref[2] = 2; 
 			this->iris_state_ref[3] = -0.1;
 			this->iris_state_ref[4] = -0.1;
 			this->iris_state_ref[5] = 0.2;
-		}	*/
+		}	
 		
 		// Runs the MPC
 		this->explicit_mpc();
@@ -581,7 +581,8 @@ namespace gazebo
 	}
 
 	public: void control_action_to_rotor_velocity() {
-		double trust_z = this->control_action[0] + this->iris_mass*this->gravity;
+		//double trust_z = this->control_action[0] + this->iris_mass*this->gravity;
+		double trust_z = (this->control_action[0] + this->iris_mass*this->gravity)/(cos(this->iris_state[3])*cos(this->iris_state[4]));
 		//std::cout << "trust z: " << trust_z << "\n";
 		
 		double vel_0_temp = (trust_z/(4*this->iris_KT) - this->control_action[1] / (4 * this->iris_KT*this->iris_ly) + this->control_action[2] / (4 * this->iris_KT*this->iris_lx) - this->control_action[3] / (4 * this->iris_KD));
