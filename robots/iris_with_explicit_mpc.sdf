@@ -13,7 +13,7 @@
             <!-- Plugin Topics -->
             <topicState>iris_state</topicState>
             <topicCommand>vel_cmd</topicCommand>
-            <topicReference>iris_ref</topicReference>
+            <topicReference>iris_reference</topicReference>
 
             <!-- Explicit Controller Files -->
             <filenameBST>/control_files/vt1_20_2_u3_linux/output_bst_20_2_u3_vt1.txt</filenameBST>

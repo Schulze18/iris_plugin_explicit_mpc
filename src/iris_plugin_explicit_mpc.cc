@@ -51,98 +51,47 @@ namespace gazebo
     {
 
    	// Just output a message for now
-    std::cerr << "\nThe iris plugin is attach to model" << _model->GetName() << "\n";
-
-	//Load Regions and BST file
-	get_bst_from_file(&(this->bst_nodes), this->filename_bst);
-	get_regions_from_file(&(this->regions), this->filename_regions);
-	get_ineq_set_from_file(&(this->ineq_set), this->filename_ineq_set);
-	get_control_param_file(&(this->control_param), this->filename_control_param);
-
-	//std::cout << "test bst: " << (this->bst_nodes)[0].left << "\n";
-	//std::cout << "test regions: " << this->regions[0].Kx[0] << "\n";
+    std::cerr << "\nThe iris plugin is attach to model " << _model->GetName() << "\n";
 
 	// Store the model pointer for convenience.
 	this->model = _model;	
-	
+	this->model_name = this->model->GetName();
+
 	// Initialize ros, if it has not already bee initialized.
 	if (!ros::isInitialized())
 	{
 	  int argc = 0;
 	  char **argv = NULL;
-	  ros::init(argc, argv, "gazebo_client", ros::init_options::NoSigintHandler);
+	  //ros::init(argc, argv, "gazebo_client", ros::init_options::NoSigintHandler);
+	  ros::init(argc, argv, this->model_name, ros::init_options::NoSigintHandler);
 	}
 
 	// Create our ROS node. This acts in a similar manner to the Gazebo node
-	this->rosNode.reset(new ros::NodeHandle("gazebo_client"));
+	//this->rosNode.reset(new ros::NodeHandle("gazebo_client"));
+	this->rosNode.reset(new ros::NodeHandle(this->model_name));
 
-	//Create and subscribe to a topic with Quaternion type
-	/*ros::SubscribeOptions so = ros::SubscribeOptions::create<geometry_msgs::Point>(
-	"/" + this->model->GetName() + "/iris_ref",1,
-	boost::bind(&IrisPluginExplicitMPC::OnRosMsg, this, _1), ros::VoidPtr(), &this->rosQueue);
-	*/
-
-	//Create and subscribe to a topic with Pose type	
-	ros::SubscribeOptions so = ros::SubscribeOptions::create<geometry_msgs::Pose>(
-	"/" + this->model->GetName() + "/iris_ref",1,
-	boost::bind(&IrisPluginExplicitMPC::OnRosMsg, this, _1), ros::VoidPtr(), &this->rosQueue);
-
-	// Store the subscriber for convenience.
-	this->rosSub = this->rosNode->subscribe(so);
-
-	// Spin up the queue helper thread.
-	this->rosQueueThread = std::thread(std::bind(&IrisPluginExplicitMPC::QueueThread, this));
-
-	// Create a topic to publish iris state
-	this->state_pub = this->rosNode->advertise<sensor_msgs::Imu>("iris_state", 100);
-	// Create a topic to publish the rotors velocities 
-	this->vel_pub = this->rosNode->advertise<geometry_msgs::Quaternion>("vel_cmd", 100);
-	
-	// Configure Timer and callback function
-	this->pubTimer = this->rosNode->createTimer(ros::Duration(0.01), &IrisPluginExplicitMPC::control_callback,this);
-	
-	// listen to the update event (broadcast every simulation iteration)
-    this->update_connection_ =
-	   event::Events::ConnectWorldUpdateBegin ( boost::bind ( &IrisPluginExplicitMPC::UpdateVelocity, this ) );
-
-	/*
-	//TOPIC
-  	if (_sdf->HasElement("topicState"))
-  	{
-		//std::cerr << std::string(this->model->GetFilename()) << "\n";
-		std::cout << _sdf->Get<std::string>("topicState") << "\n";
-		std::cout << _sdf->Get<std::string>("topicCommand") << "\n";
-		std::cout << _sdf->Get<std::string>("topicReference") << "\n";
-		std::cout << _sdf->Get<std::string>("filenameBST") << "\n";
-		std::cout << _sdf->Get<std::string>("filenameRegions") << "\n";
-		std::cout << _sdf->Get<std::string>("filenameIneq") << "\n";
-		std::cout << _sdf->Get<std::string>("filenameControlParam") << "\n";
-
-		this->rosNode->getParam("/explicit_plugin_path", this->plugin_pkg_path);
-		std::cout << this->plugin_pkg_path << "\n\n";
-
-	}*/
-
-
+	//Get plugin and controller parameters
 	if (this->rosNode->hasParam("/explicit_plugin_path")){
 		this->rosNode->getParam("/explicit_plugin_path", this->plugin_pkg_path);
 	}
 	else{
 		ROS_INFO("No param named 'explicit_plugin_path'");
 	}
+
+
 	std::string temp_file_BST;
 	std::string temp_file_regions;
 	std::string temp_file_ineq;
 	std::string temp_file_param;
 
-	if (_sdf->HasElement("topicState")) std::string temp_topic_state = _sdf->Get<std::string>("topicState");
-  	else std::string temp_topic_state = "iris_state";
+	if (_sdf->HasElement("topicState")) this->state_pub_name = _sdf->Get<std::string>("topicState");
+  	else this->state_pub_name = "iris_state";
 
-	if (_sdf->HasElement("topicCommand")) std::string temp_topic_command = _sdf->Get<std::string>("topicCommand");
-  	else std::string temp_topic_state = "vel_cmd";
+	if (_sdf->HasElement("topicCommand")) this->cmd_pub_name = _sdf->Get<std::string>("topicCommand");
+  	else this->cmd_pub_name = "vel_cmd";
 
-	if (_sdf->HasElement("topicReference")) std::string temp_topic_reference = _sdf->Get<std::string>("topicReference");
-  	else std::string temp_topic_state = "iris_ref";
+	if (_sdf->HasElement("topicReference")) this->ref_sub_name = _sdf->Get<std::string>("topicReference");
+  	else this->ref_sub_name = "iris_ref";
 
 	if (_sdf->HasElement("filenameBST")) temp_file_BST = _sdf->Get<std::string>("filenameBST");
   	else temp_file_BST = "/control_files/vt1_20_2_u3_linux/output_bst_20_2_u3_vt1.txt";
@@ -183,11 +132,79 @@ namespace gazebo
 	string_temp4 = this->plugin_pkg_path + temp_file_param;
 	this->filename_control_param = string_temp4.c_str();
 
+	/*
 	std::cout << "TEST Files\n";
 	std::cout << this->filename_bst << "\n";
 	std::cout << this->filename_regions << "\n";
 	std::cout << this->filename_ineq_set << "\n";
 	std::cout << this->filename_control_param << "\n";
+	*/
+
+	//Load Regions and BST file
+	get_bst_from_file(&(this->bst_nodes), this->filename_bst);
+	get_regions_from_file(&(this->regions), this->filename_regions);
+	get_ineq_set_from_file(&(this->ineq_set), this->filename_ineq_set);
+	get_control_param_file(&(this->control_param), this->filename_control_param);
+
+	//std::cout << "test bst: " << (this->bst_nodes)[0].left << "\n";
+	//std::cout << "test regions: " << this->regions[0].Kx[0] << "\n";
+
+
+	//Create and subscribe to a topic with Quaternion type
+	/*ros::SubscribeOptions so = ros::SubscribeOptions::create<geometry_msgs::Point>(
+	"/" + this->model->GetName() + "/iris_ref",1,
+	boost::bind(&IrisPluginExplicitMPC::OnRosMsg, this, _1), ros::VoidPtr(), &this->rosQueue);
+	*/
+
+	//Create and subscribe to a topic with Pose type	
+	/*ros::SubscribeOptions so = ros::SubscribeOptions::create<geometry_msgs::Pose>(
+	"/" + this->model->GetName() + "/iris_ref",1,
+	boost::bind(&IrisPluginExplicitMPC::OnRosMsg, this, _1), ros::VoidPtr(), &this->rosQueue);
+	*/
+	ros::SubscribeOptions so = ros::SubscribeOptions::create<geometry_msgs::Pose>(
+	"/" + this->model->GetName() + "/" + this->ref_sub_name,1,
+	boost::bind(&IrisPluginExplicitMPC::OnRosMsg, this, _1), ros::VoidPtr(), &this->rosQueue);
+
+
+	// Store the subscriber for convenience.
+	this->rosSub = this->rosNode->subscribe(so);
+
+	// Spin up the queue helper thread.
+	this->rosQueueThread = std::thread(std::bind(&IrisPluginExplicitMPC::QueueThread, this));
+
+	// Create a topic to publish iris state
+	//this->state_pub = this->rosNode->advertise<sensor_msgs::Imu>("iris_state", 100);
+	this->state_pub = this->rosNode->advertise<sensor_msgs::Imu>(this->state_pub_name, 100);
+
+	// Create a topic to publish the rotors velocities 
+	//this->vel_pub = this->rosNode->advertise<geometry_msgs::Quaternion>("vel_cmd", 100);
+	this->vel_pub = this->rosNode->advertise<geometry_msgs::Quaternion>(this->cmd_pub_name, 100);
+
+	// Configure Timer and callback function
+	this->pubTimer = this->rosNode->createTimer(ros::Duration(0.01), &IrisPluginExplicitMPC::control_callback,this);
+	
+	// listen to the update event (broadcast every simulation iteration)
+    this->update_connection_ =
+	   event::Events::ConnectWorldUpdateBegin ( boost::bind ( &IrisPluginExplicitMPC::UpdateVelocity, this ) );
+
+	/*
+	//TOPIC
+  	if (_sdf->HasElement("topicState"))
+  	{
+		//std::cerr << std::string(this->model->GetFilename()) << "\n";
+		std::cout << _sdf->Get<std::string>("topicState") << "\n";
+		std::cout << _sdf->Get<std::string>("topicCommand") << "\n";
+		std::cout << _sdf->Get<std::string>("topicReference") << "\n";
+		std::cout << _sdf->Get<std::string>("filenameBST") << "\n";
+		std::cout << _sdf->Get<std::string>("filenameRegions") << "\n";
+		std::cout << _sdf->Get<std::string>("filenameIneq") << "\n";
+		std::cout << _sdf->Get<std::string>("filenameControlParam") << "\n";
+
+		this->rosNode->getParam("/explicit_plugin_path", this->plugin_pkg_path);
+		std::cout << this->plugin_pkg_path << "\n\n";
+
+	}*/
+
 
 
 	//Debug prints
@@ -637,7 +654,7 @@ namespace gazebo
 	private: ros::Publisher vel_pub;
 
 	// Vel Cmd Publisher Name
-	private: std::string vel_pub_name;
+	private: std::string cmd_pub_name;
 
 	// A ROS callbackqueue that helps process messages
 	private: ros::CallbackQueue rosQueue;

@@ -1,6 +1,6 @@
 <launch>
 	<env name="GAZEBO_RESOURCE_PATH" value="$(find iris_plugin_explicit_mpc)"/>
-	<!--param name="explicit_plugin_path"  value="$(find iris_plugin_explicit_mpc)"/-->
+	<param name="explicit_plugin_path"  value="$(find iris_plugin_explicit_mpc)"/>
 
 
 	<!-- Start Gazebo -->
