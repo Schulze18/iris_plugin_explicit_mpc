@@ -13,3 +13,6 @@ The plugin create three topics:
 ## Software Versions:
 ROS Kinetic  
 Gazebo 7
+
+
+Details about the model and controller are available in [this paper](https://ieeexplore.ieee.org/document/9480185).
